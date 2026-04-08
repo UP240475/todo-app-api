@@ -1,101 +1,104 @@
-const taskModel = require("../models/taskModel");
+const connection = require("../config/db");
 
-const getAllTasks = async (req, res, next) => {
-  try {
-    const tasks = await taskModel.getAllTasks();
-
-    res.status(200).json({
-      success: true,
-      message: "Tasks retrieved successfully",
-      data: tasks,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getTaskById = async (req, res, next) => {
-  try {
-    const task = await taskModel.getTaskById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
+//  GET ALL
+const getTasks = (req, res) => {
+  connection.query("SELECT * FROM tasks", (err, results) => {
+    if (err) {
+      return res.status(500).json({ success: false, data: [] });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Task retrieved successfully",
-      data: task,
+      data: results,
     });
-  } catch (error) {
-    next(error);
-  }
+  });
 };
 
-const createTask = async (req, res, next) => {
-  try {
-    const newTask = await taskModel.createTask(req.body);
+//  GET BY ID
+const getTaskById = (req, res) => {
+  const { id } = req.params;
 
-    res.status(201).json({
-      success: true,
-      message: "Task created successfully",
-      data: newTask,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  connection.query(
+    "SELECT * FROM tasks WHERE id = ?",
+    [id],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ success: false });
+      }
 
-const updateTask = async (req, res, next) => {
-  try {
-    const existingTask = await taskModel.getTaskById(req.params.id);
+      if (results.length === 0) {
+        return res.status(404).json({ success: false });
+      }
 
-    if (!existingTask) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
+      res.json({
+        success: true,
+        data: results[0],
       });
     }
-
-    const updatedTask = await taskModel.updateTask(req.params.id, req.body);
-
-    res.status(200).json({
-      success: true,
-      message: "Task updated successfully",
-      data: updatedTask,
-    });
-  } catch (error) {
-    next(error);
-  }
+  );
 };
 
-const deleteTask = async (req, res, next) => {
-  try {
-    const existingTask = await taskModel.getTaskById(req.params.id);
+//  CREATE
+const createTask = (req, res) => {
+  const { title, description } = req.body;
 
-    if (!existingTask) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
+  connection.query(
+    "INSERT INTO tasks (title, description) VALUES (?, ?)",
+    [title, description],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ success: false });
+      }
+
+      res.json({
+        success: true,
+        message: "Task created",
       });
     }
+  );
+};
 
-    await taskModel.deleteTask(req.params.id);
+//  UPDATE
+const updateTask = (req, res) => {
+  const { id } = req.params;
+  const { title, description, completed } = req.body;
 
-    res.status(200).json({
+  connection.query(
+    "UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?",
+    [title, description, completed, id],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ success: false });
+      }
+
+      res.json({
+        success: true,
+        message: "Updated",
+      });
+    }
+  );
+};
+
+//  DELETE
+const deleteTask = (req, res) => {
+  const { id } = req.params;
+
+  connection.query("DELETE FROM tasks WHERE id = ?", [id], (err) => {
+    if (err) {
+      return res.status(500).json({ success: false });
+    }
+
+    res.json({
       success: true,
-      message: "Task deleted successfully",
+      message: "Deleted",
     });
-  } catch (error) {
-    next(error);
-  }
+  });
 };
 
 module.exports = {
-  getAllTasks,
+  getTasks,
   getTaskById,
   createTask,
   updateTask,

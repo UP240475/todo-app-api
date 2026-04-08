@@ -1,30 +1,20 @@
 const express = require("express");
-
-const taskController = require("../controllers/taskController");
-const {
-  validateTaskId,
-  validateCreateTask,
-  validateUpdateTask,
-} = require("../middlewares/validateTask");
-
 const router = express.Router();
 
-router.patch("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Task retrieved successfully",
-  });
-});
-router.get("/", taskController.getAllTasks);
-router.get("/:id", validateTaskId, taskController.getTaskById);
-router.post("/", validateCreateTask, taskController.createTask);
-router.put(
-  "/:id",
-  validateTaskId,
-  validateUpdateTask,
-  taskController.updateTask,
-);
+const {
+  getTasks,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+} = require("../controllers/taskController");
 
-router.delete("/:id", validateTaskId, taskController.deleteTask);
+//  ORDEN IMPORTA
+router.get("/", getTasks);
+router.get("/:id", getTaskById);
+
+router.post("/", createTask);
+router.put("/:id", updateTask);
+router.delete("/:id", deleteTask);
 
 module.exports = router;
